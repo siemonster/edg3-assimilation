@@ -1,6 +1,8 @@
 package fieldmap
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"path/filepath"
 	"testing"
 )
@@ -34,8 +36,9 @@ func TestApplyRenamesCoercesAndDigestsTheRawLine(t *testing.T) {
 	if e.Attrs["proto"] != "TCP" {
 		t.Errorf("unmapped keys must land in attrs: %v", e.Attrs)
 	}
-	if e.RawSHA256 != "6f3bbb4e01a1e0a0ad2d1e9b0e4e81b1b9e8f07a7b4f1b9c0a6de3b0d4d2f0f4" && len(e.RawSHA256) != 64 {
-		t.Errorf("raw digest not set: %q", e.RawSHA256)
+	wantDigest := sha256.Sum256(raw)
+	if e.RawSHA256 != hex.EncodeToString(wantDigest[:]) {
+		t.Errorf("raw digest not SHA-256 of raw: got %q", e.RawSHA256)
 	}
 	if err := e.Validate(); err != nil {
 		t.Errorf("applied event must validate: %v", err)
@@ -53,8 +56,48 @@ func TestApplyFailsOnAnUnparseableTimestampAndAForeignSchema(t *testing.T) {
 	}
 }
 
-func TestLoadRejectsAMapWithoutFieldsOrFormat(t *testing.T) {
+func TestApplyParsesAnEpochTimestampWithFractionalSeconds(t *testing.T) {
+	m := load(t)
+	m.TSLayout = "epoch"
+	e, err := m.Apply(map[string]string{"timestamp": "1700000000.25"}, []byte("x"))
+	if err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if e.TS.Unix() != 1700000000 || e.TS.Nanosecond() != 250000000 {
+		t.Errorf("epoch timestamp wrong: unix=%d nanosecond=%d", e.TS.Unix(), e.TS.Nanosecond())
+	}
+}
+
+func TestApplyParsesATimestampInAnExplicitGoLayout(t *testing.T) {
+	m := load(t)
+	m.TSLayout = "2006-01-02 15:04:05"
+	e, err := m.Apply(map[string]string{"timestamp": "2026-09-15 04:05:06"}, []byte("x"))
+	if err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if e.TS.Format("2006-01-02T15:04:05Z") != "2026-09-15T04:05:06Z" {
+		t.Errorf("custom-layout timestamp wrong: %v", e.TS)
+	}
+}
+
+func TestSeverityNumericAndUnknownTiers(t *testing.T) {
+	m := load(t)
+	if got := m.severity("3"); got != 3 {
+		t.Errorf("numeric-string tier: got %d, want 3", got)
+	}
+	if got := m.severity("not-a-level"); got != 5 {
+		t.Errorf("unknown-value tier: got %d, want default 5", got)
+	}
+}
+
+func TestLoadFailsOnAMissingFile(t *testing.T) {
 	if _, err := Load(filepath.Join("testdata", "missing.yaml")); err == nil {
 		t.Error("expected an error for a missing file")
+	}
+}
+
+func TestLoadRejectsAMapWithoutFieldsOrFormat(t *testing.T) {
+	if _, err := Load(filepath.Join("testdata", "incomplete.yaml")); err == nil {
+		t.Error("expected an error for a map missing format and fields")
 	}
 }
