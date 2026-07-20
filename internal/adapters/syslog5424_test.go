@@ -18,7 +18,7 @@ func TestSyslogParsesHeaderAndDerivesSeverityFromPriority(t *testing.T) {
 }
 
 func TestSyslogRejectsMalformedLines(t *testing.T) {
-	for _, line := range []string{"", "not syslog at all", "<999>1 x", "<134>2 2026-09-15T04:05:06Z h a p - - m"} {
+	for _, line := range []string{"", "not syslog at all", "<999>1 2026-09-15T04:05:06Z h a p - - m", "<134>2 2026-09-15T04:05:06Z h a p - - m"} {
 		if _, err := NewSyslog5424().Parse([]byte(line)); err == nil {
 			t.Errorf("expected an error for %q", line)
 		}
