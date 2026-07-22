@@ -17,6 +17,8 @@ func For(format string) (Adapter, error) {
 	switch format {
 	case "syslog5424":
 		return NewSyslog5424(), nil
+	case "suricata-eve":
+		return NewSuricataEVE(), nil
 	default:
 		return nil, fmt.Errorf("unsupported format %q", format)
 	}
