@@ -19,6 +19,8 @@ func For(format string) (Adapter, error) {
 		return NewSyslog5424(), nil
 	case "suricata-eve":
 		return NewSuricataEVE(), nil
+	case "zeek-conn":
+		return NewZeekConn(), nil
 	default:
 		return nil, fmt.Errorf("unsupported format %q", format)
 	}
