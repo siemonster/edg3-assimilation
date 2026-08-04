@@ -107,3 +107,23 @@ func TestWriterSinkRejectsAnAlreadyCancelledContext(t *testing.T) {
 		t.Error("Write must not write anything when context is already cancelled")
 	}
 }
+
+func TestBatchAtomicity(t *testing.T) {
+	batch := events()
+	batch = append(batch, schema.Event{
+		Schema:    schema.CanonicalURN,
+		TS:        time.Unix(1757000000, 0).UTC(),
+		Source:    "zeek-conn",
+		Kind:      "network.flow",
+		Severity:  9, // invalid: outside 0-7
+		RawSHA256: strings.Repeat("b", 64),
+	})
+	var buf bytes.Buffer
+	s := NewStdout(&buf)
+	if err := s.Write(context.Background(), batch); err == nil {
+		t.Error("Write must return error when a later event is invalid")
+	}
+	if buf.Len() != 0 {
+		t.Errorf("batch with invalid later event must write nothing, but wrote %d bytes", buf.Len())
+	}
+}
