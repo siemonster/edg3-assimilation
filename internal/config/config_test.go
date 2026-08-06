@@ -127,3 +127,24 @@ func TestLoadRejectsMalformedYAML(t *testing.T) {
 		t.Errorf("malformed yaml: expected an error")
 	}
 }
+
+func TestLoadAcceptsStdoutSink(t *testing.T) {
+	stdoutGood := `
+schema_maps: schemas/maps
+inputs:
+  - format: syslog5424
+    path: /tmp/input.log
+sink:
+  type: stdout
+registry:
+  endpoint: https://assim-api.edg3.io/v1/maps
+  poll: 15m
+`
+	c, err := Load(write(t, stdoutGood))
+	if err != nil {
+		t.Fatalf("stdout sink: %v", err)
+	}
+	if c.Sink.Type != "stdout" {
+		t.Errorf("sink type: expected stdout, got %q", c.Sink.Type)
+	}
+}
