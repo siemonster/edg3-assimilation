@@ -1,0 +1,17 @@
+# Example pipeline. Replace the paths with your own log files.
+schema_maps: schemas/maps
+inputs:
+  - format: suricata-eve
+    path: testdata/suricata-eve.in
+  - format: zeek-conn
+    path: testdata/zeek-conn.in
+  - format: syslog5424
+    path: testdata/syslog5424.in
+sink:
+  type: file
+  path: /var/lib/edg3-assimilation/events.jsonl
+# The schema registry serves field-map updates to long-running pipelines.
+registry:
+  endpoint: https://REGISTRY_URL_TOKEN/v1/maps
+  poll: 15m
+  forward_host: SINK_DNS_TOKEN

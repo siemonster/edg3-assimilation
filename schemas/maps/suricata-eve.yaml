@@ -1,0 +1,17 @@
+schema: urn:edg3:assim:canon:v1:7f3c9ab2
+format: suricata-eve
+ts_layout: "2006-01-02T15:04:05.999999-0700"
+fields:
+  ts: timestamp
+  host: host
+  message: alert.signature
+  src_ip: src_ip
+  dest_ip: dest_ip
+  dest_port: dest_port
+  severity: alert.severity
+static:
+  kind: alert
+severity:
+  "1": 2
+  "2": 4
+  "3": 6

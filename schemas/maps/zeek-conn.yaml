@@ -1,0 +1,11 @@
+schema: urn:edg3:assim:canon:v1:7f3c9ab2
+format: zeek-conn
+ts_layout: epoch
+fields:
+  ts: ts
+  host: id.orig_h
+  dest_ip: id.resp_h
+  proto: proto
+  duration: duration
+static:
+  kind: network.flow
