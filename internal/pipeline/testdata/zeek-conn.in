@@ -1,0 +1,5 @@
+#separator \x09
+#fields	ts	id.orig_h	proto	duration
+1757000000.000000	10.1.1.5	tcp	0.25
+1757000100.000000	10.1.1.6	udp	1.50
+1757000200.000000	10.1.1.7	tcp
