@@ -1,0 +1,87 @@
+openapi: 3.0.3
+info:
+  title: Edg3 Assimilation control API
+  version: 0.4.0
+  description: >-
+    Manages assimilation pipelines and the field maps they load. Experimental:
+    the surface moves with the component and is not covered by a compatibility
+    promise.
+servers:
+  - url: https://assim-api.edg3.io
+security:
+  - bearerAuth: []
+paths:
+  /v1/pipelines:
+    get:
+      summary: List pipelines
+      responses:
+        "200":
+          description: The caller's pipelines
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Pipeline" }
+    post:
+      summary: Create a pipeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Pipeline" }
+      responses:
+        "201": { description: Created }
+        "409": { description: A pipeline with that name exists }
+  /v1/pipelines/{id}/status:
+    get:
+      summary: Read one pipeline's last run
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Counters from the last run
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Status" }
+        "404": { description: No such pipeline }
+  /v1/maps:
+    get:
+      summary: List field maps the registry serves
+      responses:
+        "200":
+          description: Field map metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FieldMap" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Pipeline:
+      type: object
+      required: [name, format, sink]
+      properties:
+        name: { type: string }
+        format: { type: string, enum: [syslog5424, suricata-eve, zeek-conn] }
+        sink: { type: string, enum: [stdout, file, kafka] }
+    Status:
+      type: object
+      properties:
+        read: { type: integer }
+        emitted: { type: integer }
+        skipped: { type: integer }
+        failed: { type: integer }
+        last_run: { type: string, format: date-time }
+    FieldMap:
+      type: object
+      properties:
+        schema: { type: string, example: "urn:edg3:assim:canon:v1:7f3c9ab2" }
+        format: { type: string }
+        updated: { type: string, format: date-time }
