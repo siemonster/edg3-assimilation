@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"path/filepath"
 	"testing"
+
+	"github.com/siemonster/edg3-assimilation/internal/schema"
 )
 
 func load(t *testing.T) Map {
@@ -99,5 +101,38 @@ func TestLoadFailsOnAMissingFile(t *testing.T) {
 func TestLoadRejectsAMapWithoutFieldsOrFormat(t *testing.T) {
 	if _, err := Load(filepath.Join("testdata", "incomplete.yaml")); err == nil {
 		t.Error("expected an error for a map missing format and fields")
+	}
+}
+
+func TestApplyDefaultsSeverityToUnknownWhenNothingMapsIt(t *testing.T) {
+	m := Map{Schema: schema.CanonicalURN, Format: "example", Fields: map[string]string{"host": "hostname"}}
+	e, err := m.Apply(map[string]string{"hostname": "sensor-1"}, []byte("x"))
+	if err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if e.Severity != 5 {
+		t.Errorf("severity with no mapping: got %d, want default 5", e.Severity)
+	}
+}
+
+func TestApplyStaticSeverityAndMessageLandOnTheEventNotAttrs(t *testing.T) {
+	m := Map{Schema: schema.CanonicalURN, Format: "example",
+		Fields: map[string]string{"host": "hostname"},
+		Static: map[string]string{"severity": "4", "message": "static message"}}
+	e, err := m.Apply(map[string]string{"hostname": "sensor-1"}, []byte("x"))
+	if err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if e.Severity != 4 {
+		t.Errorf("static severity: got %d, want 4", e.Severity)
+	}
+	if e.Message != "static message" {
+		t.Errorf("static message: got %q, want %q", e.Message, "static message")
+	}
+	if _, ok := e.Attrs["severity"]; ok {
+		t.Errorf("static severity must not also land in attrs: %v", e.Attrs)
+	}
+	if _, ok := e.Attrs["message"]; ok {
+		t.Errorf("static message must not also land in attrs: %v", e.Attrs)
 	}
 }

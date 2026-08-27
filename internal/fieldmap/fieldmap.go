@@ -51,7 +51,7 @@ func (m Map) Apply(rec map[string]string, raw []byte) (schema.Event, error) {
 	}
 	digest := sha256.Sum256(raw)
 	e := schema.Event{Schema: m.Schema, Source: m.Format, RawSHA256: hex.EncodeToString(digest[:]),
-		Attrs: map[string]string{}}
+		Severity: 5, Attrs: map[string]string{}}
 	mapped := map[string]bool{}
 	for canonical, key := range m.Fields {
 		value, ok := rec[key]
@@ -84,6 +84,10 @@ func (m Map) Apply(rec map[string]string, raw []byte) (schema.Event, error) {
 			e.Kind = value
 		case "host":
 			e.Host = value
+		case "message":
+			e.Message = value
+		case "severity":
+			e.Severity = m.severity(value)
 		default:
 			e.Attrs[key] = value
 		}

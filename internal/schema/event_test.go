@@ -37,6 +37,16 @@ func TestValidateRejectsEachMissingOrOutOfRangeField(t *testing.T) {
 	}
 }
 
+func TestValidateAcceptsTheSeverityBoundaries(t *testing.T) {
+	for _, sev := range []int{0, 7} {
+		e := valid()
+		e.Severity = sev
+		if err := e.Validate(); err != nil {
+			t.Errorf("severity %d should be accepted: %v", sev, err)
+		}
+	}
+}
+
 func TestCanonicalURNIsPinned(t *testing.T) {
 	if CanonicalURN != "urn:edg3:assim:canon:v1:7f3c9ab2" {
 		t.Fatalf("the canary URN changed: %q", CanonicalURN)

@@ -43,5 +43,21 @@ func TestEveryShippedMapNormalisesItsSampleFile(t *testing.T) {
 				}
 			}
 		}
+
+		// zeek-conn's map has no severity mapping, so every event must fall
+		// back to the "unknown" tier (5), not the zero value (Emergency).
+		if format == "zeek-conn" {
+			decoder := json.NewDecoder(bytes.NewReader(buf.Bytes()))
+			for i := 0; i < stats.Emitted; i++ {
+				var e schema.Event
+				if err := decoder.Decode(&e); err != nil {
+					t.Errorf("%s event %d: decode failed: %v", format, i, err)
+					break
+				}
+				if e.Severity != 5 {
+					t.Errorf("%s event %d: severity = %d, want 5", format, i, e.Severity)
+				}
+			}
+		}
 	}
 }
