@@ -49,6 +49,6 @@ func TestValidateAcceptsTheSeverityBoundaries(t *testing.T) {
 
 func TestCanonicalURNIsPinned(t *testing.T) {
 	if CanonicalURN != "urn:edg3:assim:canon:v1:7f3c9ab2" {
-		t.Fatalf("the canary URN changed: %q", CanonicalURN)
+		t.Fatalf("the canonical URN changed: %q", CanonicalURN)
 	}
 }

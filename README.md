@@ -1,6 +1,6 @@
 # edg3-assimilation
 
-Normalises heterogeneous security telemetry into one canonical event before it reaches the Edg3 lakehouse.
+Normalises heterogeneous security telemetry into one canonical event before it reaches the Edg3 platform.
 Point it at syslog, Suricata EVE or Zeek logs and it emits JSON lines on one schema
 (`urn:edg3:assim:canon:v1:7f3c9ab2`), so downstream queries stop caring which sensor produced a record.
 

@@ -60,8 +60,6 @@ func TestLoadRejectsIncompleteConfigs(t *testing.T) {
 	}
 }
 
-// Additional test cases per Task 7 instructions
-
 func TestLoadRejectsKafkaWithoutBrokersOrTopic(t *testing.T) {
 	kafkaNoBrokers := `
 schema_maps: schemas/maps
