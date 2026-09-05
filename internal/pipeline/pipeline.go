@@ -48,6 +48,10 @@ func Run(ctx context.Context, c config.Config, out sink.Sink, since time.Time) (
 		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 		for scanner.Scan() {
 			if err := ctx.Err(); err != nil {
+				if _, ferr := flush(ctx, out, batch, &stats); ferr != nil {
+					f.Close()
+					return stats, ferr
+				}
 				f.Close()
 				return stats, err
 			}
@@ -72,26 +76,36 @@ func Run(ctx context.Context, c config.Config, out sink.Sink, since time.Time) (
 			}
 			batch = append(batch, e)
 			if len(batch) == batchSize {
-				if err := out.Write(ctx, batch); err != nil {
+				var ferr error
+				if batch, ferr = flush(ctx, out, batch, &stats); ferr != nil {
 					f.Close()
-					return stats, err
+					return stats, ferr
 				}
-				stats.Emitted += len(batch)
-				batch = batch[:0]
 			}
 		}
+		batch, ferr := flush(ctx, out, batch, &stats)
 		if err := scanner.Err(); err != nil {
 			f.Close()
 			return stats, fmt.Errorf("%s: %w", in.Path, err)
 		}
-		if len(batch) > 0 {
-			if err := out.Write(ctx, batch); err != nil {
-				f.Close()
-				return stats, err
-			}
-			stats.Emitted += len(batch)
+		if ferr != nil {
+			f.Close()
+			return stats, ferr
 		}
 		f.Close()
 	}
 	return stats, nil
+}
+
+// flush writes batch to out if it holds any events, records them in stats,
+// and returns the now-empty batch for reuse.
+func flush(ctx context.Context, out sink.Sink, batch []schema.Event, stats *Stats) ([]schema.Event, error) {
+	if len(batch) == 0 {
+		return batch, nil
+	}
+	if err := out.Write(ctx, batch); err != nil {
+		return batch, err
+	}
+	stats.Emitted += len(batch)
+	return batch[:0], nil
 }

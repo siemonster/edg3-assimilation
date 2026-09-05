@@ -20,9 +20,18 @@ func TestSuricataFlattensNestedObjectsWithDottedKeys(t *testing.T) {
 }
 
 func TestSuricataRejectsNonObjectsAndBrokenJSON(t *testing.T) {
-	for _, line := range []string{"", "[1,2]", "{not json}", `"a string"`, "{}"} {
+	for _, line := range []string{"[1,2]", "{not json}", `"a string"`, "{}"} {
 		if _, err := NewSuricataEVE().Parse([]byte(line)); err == nil {
 			t.Errorf("expected an error for %q", line)
+		}
+	}
+}
+
+func TestSuricataReturnsNilForBlankLines(t *testing.T) {
+	for _, line := range []string{"", "   ", "\t"} {
+		rec, err := NewSuricataEVE().Parse([]byte(line))
+		if rec != nil || err != nil {
+			t.Errorf("blank line %q must return (nil, nil), got rec=%v err=%v", line, rec, err)
 		}
 	}
 }

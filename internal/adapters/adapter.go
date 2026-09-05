@@ -7,6 +7,11 @@ import "fmt"
 type Record map[string]string
 
 // Adapter parses exactly one wire format.
+//
+// Parse returns a nil Record and a nil error to mean the line carries no
+// event at all — a blank line, or a format-specific directive such as
+// Zeek's #fields header. A non-nil error means the line could not be
+// parsed.
 type Adapter interface {
 	Name() string
 	Parse(line []byte) (Record, error)

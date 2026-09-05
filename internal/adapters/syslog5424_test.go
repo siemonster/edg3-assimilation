@@ -18,10 +18,34 @@ func TestSyslogParsesHeaderAndDerivesSeverityFromPriority(t *testing.T) {
 }
 
 func TestSyslogRejectsMalformedLines(t *testing.T) {
-	for _, line := range []string{"", "not syslog at all", "<999>1 2026-09-15T04:05:06Z h a p - - m", "<134>2 2026-09-15T04:05:06Z h a p - - m"} {
+	for _, line := range []string{"not syslog at all", "<999>1 2026-09-15T04:05:06Z h a p - - m", "<134>2 2026-09-15T04:05:06Z h a p - - m"} {
 		if _, err := NewSyslog5424().Parse([]byte(line)); err == nil {
 			t.Errorf("expected an error for %q", line)
 		}
+	}
+}
+
+func TestSyslogReturnsNilForBlankLines(t *testing.T) {
+	for _, line := range []string{"", "   ", "\t"} {
+		rec, err := NewSyslog5424().Parse([]byte(line))
+		if rec != nil || err != nil {
+			t.Errorf("blank line %q must return (nil, nil), got rec=%v err=%v", line, rec, err)
+		}
+	}
+}
+
+func TestSyslogDropsNILVALUEFields(t *testing.T) {
+	rec, err := NewSyslog5424().Parse([]byte("<134>1 2026-09-15T04:05:06Z fw-edge-1 suricata - - - signature fired"))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	for _, key := range []string{"procid", "msgid"} {
+		if v, ok := rec[key]; ok {
+			t.Errorf("%s must be dropped for RFC 5424 NILVALUE, got %q", key, v)
+		}
+	}
+	if rec["app"] != "suricata" {
+		t.Errorf("app = %q, want suricata", rec["app"])
 	}
 }
 

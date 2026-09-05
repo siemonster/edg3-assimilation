@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -53,5 +55,29 @@ func TestRunHonoursSinceAndReportsAMissingMap(t *testing.T) {
 	broken.SchemaMaps = filepath.Join("testdata", "absent")
 	if _, err := Run(context.Background(), broken, sink.NewStdout(&buf), time.Time{}); err == nil {
 		t.Error("a missing field map must fail the run")
+	}
+}
+
+func TestRunFlushesThePendingBatchBeforeAScannerError(t *testing.T) {
+	dir := t.TempDir()
+	in := filepath.Join(dir, "zeek-conn.in")
+	body := "#fields\tts\tid.orig_h\tproto\tduration\n" +
+		"1757000000.000000\t10.1.1.5\ttcp\t0.25\n" +
+		"1757000100.000000\t10.1.1.6\tudp\t1.50\n" +
+		strings.Repeat("x", 2*1024*1024) + "\n"
+	if err := os.WriteFile(in, []byte(body), 0o600); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	c := config.Config{SchemaMaps: "testdata",
+		Inputs: []config.Input{{Format: "zeek-conn", Path: in}},
+		Sink:   config.SinkConfig{Type: "stdout"}}
+
+	var buf bytes.Buffer
+	stats, err := Run(context.Background(), c, sink.NewStdout(&buf), time.Time{})
+	if err == nil {
+		t.Fatal("expected a scanner error for the oversized line")
+	}
+	if stats.Emitted != 2 {
+		t.Errorf("events parsed before the scanner error must still be flushed: stats=%+v", stats)
 	}
 }

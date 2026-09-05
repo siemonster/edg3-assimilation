@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -14,6 +15,9 @@ func NewSuricataEVE() Adapter { return suricataEVE{} }
 func (suricataEVE) Name() string { return "suricata-eve" }
 
 func (suricataEVE) Parse(line []byte) (Record, error) {
+	if len(bytes.TrimSpace(line)) == 0 {
+		return nil, nil // a blank line carries no event
+	}
 	var doc map[string]any
 	if err := json.Unmarshal(line, &doc); err != nil {
 		return nil, fmt.Errorf("line is not an EVE JSON object: %w", err)
