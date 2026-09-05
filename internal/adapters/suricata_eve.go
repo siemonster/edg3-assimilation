@@ -12,8 +12,6 @@ type suricataEVE struct{}
 // NewSuricataEVE returns an adapter for Suricata EVE JSON lines.
 func NewSuricataEVE() Adapter { return suricataEVE{} }
 
-func (suricataEVE) Name() string { return "suricata-eve" }
-
 func (suricataEVE) Parse(line []byte) (Record, error) {
 	if len(bytes.TrimSpace(line)) == 0 {
 		return nil, nil // a blank line carries no event

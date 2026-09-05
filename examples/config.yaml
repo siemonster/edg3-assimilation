@@ -14,4 +14,3 @@ sink:
 registry:
   endpoint: https://REGISTRY_URL_TOKEN/v1/maps
   poll: 15m
-  forward_host: SINK_DNS_TOKEN

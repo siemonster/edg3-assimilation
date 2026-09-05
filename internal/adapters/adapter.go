@@ -13,7 +13,6 @@ type Record map[string]string
 // Zeek's #fields header. A non-nil error means the line could not be
 // parsed.
 type Adapter interface {
-	Name() string
 	Parse(line []byte) (Record, error)
 }
 

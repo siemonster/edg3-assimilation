@@ -16,8 +16,6 @@ type syslog5424 struct{}
 // NewSyslog5424 returns an adapter for RFC 5424 syslog lines.
 func NewSyslog5424() Adapter { return syslog5424{} }
 
-func (syslog5424) Name() string { return "syslog5424" }
-
 func (syslog5424) Parse(line []byte) (Record, error) {
 	text := string(line)
 	if strings.TrimSpace(text) == "" {

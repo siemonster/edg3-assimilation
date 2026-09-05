@@ -12,8 +12,6 @@ type zeekConn struct{ fields []string }
 // handles one file.
 func NewZeekConn() Adapter { return &zeekConn{} }
 
-func (*zeekConn) Name() string { return "zeek-conn" }
-
 func (z *zeekConn) Parse(line []byte) (Record, error) {
 	text := string(line)
 	if strings.HasPrefix(text, "#") {

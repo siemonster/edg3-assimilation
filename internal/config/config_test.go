@@ -52,6 +52,10 @@ func TestLoadRejectsIncompleteConfigs(t *testing.T) {
 		"unknown sink":   "schema_maps: m\ninputs:\n  - format: zeek-conn\n    path: x\nsink:\n  type: carrier-pigeon\n",
 		"input no path":  "schema_maps: m\ninputs:\n  - format: zeek-conn\nsink:\n  type: stdout\n",
 		"no schema maps": "inputs:\n  - format: zeek-conn\n    path: x\nsink:\n  type: stdout\n",
+		"registry endpoint not https": "schema_maps: m\ninputs:\n  - format: zeek-conn\n    path: x\nsink:\n  type: stdout\n" +
+			"registry:\n  endpoint: http://assim-api.edg3.io/v1/maps\n",
+		"registry poll not a duration": "schema_maps: m\ninputs:\n  - format: zeek-conn\n    path: x\nsink:\n  type: stdout\n" +
+			"registry:\n  poll: not-a-duration\n",
 	}
 	for name, body := range cases {
 		if _, err := Load(write(t, body)); err == nil {
@@ -123,6 +127,14 @@ func TestLoadRejectsMalformedYAML(t *testing.T) {
 	_, err := Load(write(t, malformed))
 	if err == nil {
 		t.Errorf("malformed yaml: expected an error")
+	}
+}
+
+func TestLoadAcceptsTheShippedExampleConfig(t *testing.T) {
+	// The registry endpoint in examples/config.yaml is a placeholder host,
+	// not a resolvable one, but it must still parse as an https URL.
+	if _, err := Load(filepath.Join("..", "..", "examples", "config.yaml")); err != nil {
+		t.Fatalf("the shipped example config must load: %v", err)
 	}
 }
 

@@ -3,7 +3,9 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -69,6 +71,17 @@ func Load(path string) (Config, error) {
 		}
 	default:
 		return Config{}, fmt.Errorf("%s: unsupported sink type %q", path, c.Sink.Type)
+	}
+	if c.Registry.Endpoint != "" {
+		u, err := url.Parse(c.Registry.Endpoint)
+		if err != nil || u.Scheme != "https" || u.Host == "" {
+			return Config{}, fmt.Errorf("%s: registry.endpoint must be an https URL", path)
+		}
+	}
+	if c.Registry.Poll != "" {
+		if _, err := time.ParseDuration(c.Registry.Poll); err != nil {
+			return Config{}, fmt.Errorf("%s: registry.poll must be a valid duration: %w", path, err)
+		}
 	}
 	return c, nil
 }
