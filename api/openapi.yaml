@@ -66,11 +66,24 @@ components:
   schemas:
     Pipeline:
       type: object
-      required: [name, format, sink]
+      required: [name, schema_maps, inputs, sink]
       properties:
         name: { type: string }
-        format: { type: string, enum: [syslog5424, suricata-eve, zeek-conn] }
-        sink: { type: string, enum: [stdout, file, kafka] }
+        schema_maps: { type: string, description: Directory holding this pipeline's field maps }
+        inputs:
+          type: array
+          items:
+            type: object
+            required: [format, path]
+            properties:
+              format: { type: string, enum: [syslog5424, suricata-eve, zeek-conn] }
+              path: { type: string }
+        sink:
+          type: object
+          required: [type]
+          properties:
+            type: { type: string, enum: [stdout, file, kafka] }
+            path: { type: string }
     Status:
       type: object
       properties:
