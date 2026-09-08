@@ -15,10 +15,26 @@ import (
 	"github.com/siemonster/edg3-assimilation/internal/sink"
 )
 
-func conf() config.Config {
+func zeekConfig(path string) config.Config {
 	return config.Config{SchemaMaps: "testdata",
-		Inputs: []config.Input{{Format: "zeek-conn", Path: filepath.Join("testdata", "zeek-conn.in")}},
+		Inputs: []config.Input{{Format: "zeek-conn", Path: path}},
 		Sink:   config.SinkConfig{Type: "stdout"}}
+}
+
+func conf() config.Config {
+	return zeekConfig(filepath.Join("testdata", "zeek-conn.in"))
+}
+
+// writeZeek writes body as a Zeek input file in a fresh temp dir and returns
+// its path, so a test can exercise Run against a fixture of its own shape
+// without adding a new file under testdata.
+func writeZeek(t *testing.T, body string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "zeek-conn.in")
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	return path
 }
 
 func TestRunNormalisesEveryDataLineAndSkipsDirectives(t *testing.T) {
@@ -59,25 +75,77 @@ func TestRunHonoursSinceAndReportsAMissingMap(t *testing.T) {
 }
 
 func TestRunFlushesThePendingBatchBeforeAScannerError(t *testing.T) {
-	dir := t.TempDir()
-	in := filepath.Join(dir, "zeek-conn.in")
-	body := "#fields\tts\tid.orig_h\tproto\tduration\n" +
-		"1757000000.000000\t10.1.1.5\ttcp\t0.25\n" +
-		"1757000100.000000\t10.1.1.6\tudp\t1.50\n" +
-		strings.Repeat("x", 2*1024*1024) + "\n"
-	if err := os.WriteFile(in, []byte(body), 0o600); err != nil {
-		t.Fatalf("write fixture: %v", err)
-	}
-	c := config.Config{SchemaMaps: "testdata",
-		Inputs: []config.Input{{Format: "zeek-conn", Path: in}},
-		Sink:   config.SinkConfig{Type: "stdout"}}
+	in := writeZeek(t, "#fields\tts\tid.orig_h\tproto\tduration\n"+
+		"1757000000.000000\t10.1.1.5\ttcp\t0.25\n"+
+		"1757000100.000000\t10.1.1.6\tudp\t1.50\n"+
+		strings.Repeat("x", 2*1024*1024)+"\n")
 
 	var buf bytes.Buffer
-	stats, err := Run(context.Background(), c, sink.NewStdout(&buf), time.Time{})
+	stats, err := Run(context.Background(), zeekConfig(in), sink.NewStdout(&buf), time.Time{})
 	if err == nil {
 		t.Fatal("expected a scanner error for the oversized line")
 	}
 	if stats.Emitted != 2 {
 		t.Errorf("events parsed before the scanner error must still be flushed: stats=%+v", stats)
+	}
+}
+
+func TestRunEmitsAnEventWhoseTimestampExactlyEqualsSince(t *testing.T) {
+	var buf bytes.Buffer
+	since := time.Unix(1757000000, 0) // exactly the first event's ts in conf()
+	stats, err := Run(context.Background(), conf(), sink.NewStdout(&buf), since)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if stats.Skipped != 0 || stats.Emitted != 2 {
+		t.Errorf("an event at exactly --since must be emitted, not skipped: %+v", stats)
+	}
+}
+
+func TestRunCountsALineThatFailsMappingAsFailed(t *testing.T) {
+	// The line parses fine (right column count), but its ts is not a valid
+	// epoch value, so fieldmap.Apply fails it rather than adapter.Parse.
+	in := writeZeek(t, "#fields\tts\tid.orig_h\tproto\tduration\n"+
+		"not-a-number\t10.1.1.9\ttcp\t0.1\n")
+
+	var buf bytes.Buffer
+	stats, err := Run(context.Background(), zeekConfig(in), sink.NewStdout(&buf), time.Time{})
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if stats.Failed != 1 || stats.Emitted != 0 {
+		t.Fatalf("stats = %+v, want 1 failed and 0 emitted", stats)
+	}
+}
+
+func TestRunFlushesTheBatchWhenItFillsAndAgainAtEndOfInput(t *testing.T) {
+	orig := batchSize
+	batchSize = 2
+	defer func() { batchSize = orig }()
+
+	in := writeZeek(t, "#fields\tts\tid.orig_h\tproto\tduration\n"+
+		"1757000000.000000\t10.1.1.5\ttcp\t0.25\n"+
+		"1757000100.000000\t10.1.1.6\tudp\t1.50\n"+
+		"1757000200.000000\t10.1.1.7\ttcp\t0.75\n")
+
+	var buf bytes.Buffer
+	stats, err := Run(context.Background(), zeekConfig(in), sink.NewStdout(&buf), time.Time{})
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if stats.Emitted != 3 || stats.Failed != 0 {
+		t.Fatalf("stats = %+v, want 3 emitted and 0 failed", stats)
+	}
+	decoder := json.NewDecoder(bytes.NewReader(buf.Bytes()))
+	hosts := map[string]bool{}
+	for i := 0; i < 3; i++ {
+		var e schema.Event
+		if err := decoder.Decode(&e); err != nil {
+			t.Fatalf("event %d: %v", i, err)
+		}
+		hosts[e.Host] = true
+	}
+	if len(hosts) != 3 {
+		t.Errorf("want each of 3 events emitted exactly once, got hosts %v", hosts)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,8 +33,10 @@ func TestStdoutWritesOneJSONLinePerEvent(t *testing.T) {
 	if err := json.Unmarshal([]byte(lines[0]), &back); err != nil {
 		t.Fatalf("output is not JSON: %v", err)
 	}
-	if back.Schema != schema.CanonicalURN || back.Source != "zeek-conn" {
-		t.Errorf("round trip lost fields: %+v", back)
+	want := events()[0]
+	if back.Schema != want.Schema || back.Source != want.Source || !back.TS.Equal(want.TS) ||
+		back.Kind != want.Kind || back.Severity != want.Severity || back.RawSHA256 != want.RawSHA256 {
+		t.Errorf("round trip lost fields: got %+v, want %+v", back, want)
 	}
 }
 
@@ -82,8 +85,9 @@ func TestFileCreatedWithMode0o600(t *testing.T) {
 }
 
 func TestKafkaIsDeclaredButNotImplemented(t *testing.T) {
-	if _, err := NewKafka([]string{"localhost:9092"}, "events"); err == nil {
-		t.Fatal("the Kafka sink must refuse until it is implemented")
+	_, err := NewKafka([]string{"localhost:9092"}, "events")
+	if !errors.Is(err, ErrNotImplemented) {
+		t.Fatalf("want ErrNotImplemented, got %v", err)
 	}
 }
 

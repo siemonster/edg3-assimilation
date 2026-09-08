@@ -16,7 +16,10 @@ import (
 	"github.com/siemonster/edg3-assimilation/internal/sink"
 )
 
-const batchSize = 500
+// batchSize caps how many events accumulate before a write to the sink.
+// It is a variable (rather than a constant) so tests can shrink it to
+// exercise the mid-run flush without a multi-hundred-line fixture.
+var batchSize = 500
 
 // Stats counts one run.
 type Stats struct {

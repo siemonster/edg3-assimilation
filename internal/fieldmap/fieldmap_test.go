@@ -98,6 +98,21 @@ func TestLoadFailsOnAMissingFile(t *testing.T) {
 	}
 }
 
+func TestApplySeverityFallbackPromotesWithoutDuplicatingIntoAttrs(t *testing.T) {
+	m := Map{Schema: schema.CanonicalURN, Format: "example", Fields: map[string]string{"host": "hostname"}}
+	rec := map[string]string{"hostname": "sensor-1", "severity": "3"}
+	e, err := m.Apply(rec, []byte("x"))
+	if err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if e.Severity != 3 {
+		t.Errorf("severity fallback not applied: got %d", e.Severity)
+	}
+	if _, ok := e.Attrs["severity"]; ok {
+		t.Errorf("severity fallback must not also land in attrs, like a Fields promotion: %v", e.Attrs)
+	}
+}
+
 func TestLoadRejectsAMapWithoutFieldsOrFormat(t *testing.T) {
 	if _, err := Load(filepath.Join("testdata", "incomplete.yaml")); err == nil {
 		t.Error("expected an error for a map missing format and fields")

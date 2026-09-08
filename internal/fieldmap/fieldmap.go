@@ -94,6 +94,7 @@ func (m Map) Apply(rec map[string]string, raw []byte) (schema.Event, error) {
 	}
 	if level, ok := rec["severity"]; ok && !mapped["severity"] {
 		e.Severity = m.severity(level)
+		mapped["severity"] = true
 	}
 	for key, value := range rec {
 		if !mapped[key] {

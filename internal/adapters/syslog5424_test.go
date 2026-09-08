@@ -54,3 +54,13 @@ func TestForReturnsAnErrorForAnUnknownFormat(t *testing.T) {
 		t.Error("unknown formats must be refused")
 	}
 }
+
+func TestForReturnsAWorkingSyslog5424Adapter(t *testing.T) {
+	a, err := For("syslog5424")
+	if err != nil {
+		t.Fatalf("For: %v", err)
+	}
+	if _, err := a.Parse([]byte(sample)); err != nil {
+		t.Errorf("adapter from For must parse a real line: %v", err)
+	}
+}
