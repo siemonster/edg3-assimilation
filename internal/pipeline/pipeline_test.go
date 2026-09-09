@@ -69,8 +69,12 @@ func TestRunHonoursSinceAndReportsAMissingMap(t *testing.T) {
 	}
 	broken := conf()
 	broken.SchemaMaps = filepath.Join("testdata", "absent")
-	if _, err := Run(context.Background(), broken, sink.NewStdout(&buf), time.Time{}); err == nil {
-		t.Error("a missing field map must fail the run")
+	_, err = Run(context.Background(), broken, sink.NewStdout(&buf), time.Time{})
+	if err == nil {
+		t.Fatal("a missing field map must fail the run")
+	}
+	if !strings.Contains(err.Error(), broken.Inputs[0].Path) {
+		t.Errorf("error should name the failing input %q: %v", broken.Inputs[0].Path, err)
 	}
 }
 

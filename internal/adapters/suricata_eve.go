@@ -3,6 +3,7 @@ package adapters
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -23,7 +24,7 @@ func (suricataEVE) Parse(line []byte) (Record, error) {
 	rec := Record{}
 	flatten("", doc, rec)
 	if len(rec) == 0 {
-		return nil, fmt.Errorf("EVE object is empty")
+		return nil, errors.New("EVE object is empty")
 	}
 	return rec, nil
 }

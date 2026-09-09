@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -23,7 +24,7 @@ func (syslog5424) Parse(line []byte) (Record, error) {
 	}
 	m := syslogRE.FindStringSubmatch(text)
 	if m == nil {
-		return nil, fmt.Errorf("line is not RFC 5424 syslog")
+		return nil, errors.New("line is not RFC 5424 syslog")
 	}
 	priority, err := strconv.Atoi(m[1])
 	if err != nil || priority > 191 {

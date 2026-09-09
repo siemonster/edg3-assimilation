@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -24,7 +25,7 @@ func (z *zeekConn) Parse(line []byte) (Record, error) {
 		return nil, nil
 	}
 	if len(z.fields) == 0 {
-		return nil, fmt.Errorf("data line before a #fields header")
+		return nil, errors.New("data line before a #fields header")
 	}
 	values := strings.Split(text, "\t")
 	if len(values) != len(z.fields) {

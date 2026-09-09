@@ -36,15 +36,15 @@ func Run(ctx context.Context, c config.Config, out sink.Sink, since time.Time) (
 	for _, in := range c.Inputs {
 		adapter, err := adapters.For(in.Format)
 		if err != nil {
-			return stats, err
+			return stats, fmt.Errorf("%s: %w", in.Path, err)
 		}
 		m, err := fieldmap.Load(filepath.Join(c.SchemaMaps, in.Format+".yaml"))
 		if err != nil {
-			return stats, err
+			return stats, fmt.Errorf("%s: %w", in.Path, err)
 		}
 		f, err := os.Open(in.Path)
 		if err != nil {
-			return stats, err
+			return stats, fmt.Errorf("%s: %w", in.Path, err)
 		}
 		batch := make([]schema.Event, 0, batchSize)
 		scanner := bufio.NewScanner(f)
