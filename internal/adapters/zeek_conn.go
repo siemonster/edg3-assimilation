@@ -21,7 +21,7 @@ func (z *zeekConn) Parse(line []byte) (Record, error) {
 		}
 		return nil, nil // directives carry no event
 	}
-	if text == "" {
+	if strings.TrimSpace(text) == "" {
 		return nil, nil
 	}
 	if len(z.fields) == 0 {

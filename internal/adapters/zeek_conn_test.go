@@ -65,11 +65,14 @@ func TestZeekReturnsNilForBlankLines(t *testing.T) {
 	if _, err := a.Parse([]byte("#fields\tts\tproto")); err != nil {
 		t.Fatalf("header: %v", err)
 	}
-	rec, err := a.Parse([]byte(""))
-	if rec != nil {
-		t.Errorf("blank line should return nil record, got %v", rec)
-	}
-	if err != nil {
-		t.Errorf("blank line should return nil error, got %v", err)
+	cases := []string{"", "   ", "\t"}
+	for _, line := range cases {
+		rec, err := a.Parse([]byte(line))
+		if rec != nil {
+			t.Errorf("line %q should return nil record, got %v", line, rec)
+		}
+		if err != nil {
+			t.Errorf("line %q should return nil error, got %v", line, err)
+		}
 	}
 }
