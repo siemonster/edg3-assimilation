@@ -51,10 +51,6 @@ func Run(ctx context.Context, c config.Config, out sink.Sink, since time.Time) (
 		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 		for scanner.Scan() {
 			if err := ctx.Err(); err != nil {
-				if _, ferr := flush(ctx, out, batch, &stats); ferr != nil {
-					f.Close()
-					return stats, ferr
-				}
 				f.Close()
 				return stats, err
 			}
