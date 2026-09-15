@@ -11,5 +11,5 @@ sink:
   type: stdout
 # The schema registry serves field-map updates to long-running pipelines.
 registry:
-  endpoint: https://REGISTRY_URL_TOKEN/v1/maps
+  endpoint: https://reg-67016919.assim-api.edg3.io/v1/maps
   poll: 15m

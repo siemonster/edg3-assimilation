@@ -131,8 +131,8 @@ func TestLoadRejectsMalformedYAML(t *testing.T) {
 }
 
 func TestLoadAcceptsTheShippedExampleConfig(t *testing.T) {
-	// The registry endpoint in examples/config.yaml is a placeholder host,
-	// not a resolvable one, but it must still parse as an https URL.
+	// The shipped example is what a new user copies first, so it has to stay
+	// loadable exactly as committed.
 	if _, err := Load(filepath.Join("..", "..", "examples", "config.yaml")); err != nil {
 		t.Fatalf("the shipped example config must load: %v", err)
 	}
