@@ -64,3 +64,15 @@ func TestForReturnsAWorkingSyslog5424Adapter(t *testing.T) {
 		t.Errorf("adapter from For must parse a real line: %v", err)
 	}
 }
+
+func TestSyslogAcceptsMultipleStructuredDataElements(t *testing.T) {
+	// RFC 5424 allows STRUCTURED-DATA to be a sequence of SD-ELEMENTs.
+	line := `<134>1 2026-09-15T04:05:06Z fw-edge-1 suricata 4211 - [origin ip="10.0.0.1"][meta seq="7"] signature fired`
+	rec, err := NewSyslog5424().Parse([]byte(line))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if rec["msg"] != "signature fired" {
+		t.Errorf("msg = %q, want %q", rec["msg"], "signature fired")
+	}
+}

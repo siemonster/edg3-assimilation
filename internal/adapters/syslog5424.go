@@ -10,7 +10,7 @@ import (
 
 // RFC 5424: <PRI>VERSION TIMESTAMP HOST APP PROCID MSGID [SD] MSG
 var syslogRE = regexp.MustCompile(
-	`^<(\d{1,3})>1 (\S+) (\S+) (\S+) (\S+) (\S+) (?:-|\[.*?\]) ?(.*)$`)
+	`^<(\d{1,3})>1 (\S+) (\S+) (\S+) (\S+) (\S+) (?:-|(?:\[.*?\])+) ?(.*)$`)
 
 type syslog5424 struct{}
 
