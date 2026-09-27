@@ -16,7 +16,9 @@ import (
 
 func events() []schema.Event {
 	return []schema.Event{{Schema: schema.CanonicalURN, TS: time.Unix(1757000000, 0).UTC(),
-		Source: "zeek-conn", Kind: "network.flow", Severity: 5, RawSHA256: strings.Repeat("b", 64)}}
+		Source: "zeek-conn", Host: "fw-edge-1", Kind: "network.flow", Severity: 5,
+		Message: "connection established", Attrs: map[string]string{"dst_port": "443"},
+		RawSHA256: strings.Repeat("b", 64)}}
 }
 
 func TestStdoutWritesOneJSONLinePerEvent(t *testing.T) {
@@ -35,8 +37,19 @@ func TestStdoutWritesOneJSONLinePerEvent(t *testing.T) {
 	}
 	want := events()[0]
 	if back.Schema != want.Schema || back.Source != want.Source || !back.TS.Equal(want.TS) ||
-		back.Kind != want.Kind || back.Severity != want.Severity || back.RawSHA256 != want.RawSHA256 {
+		back.Kind != want.Kind || back.Severity != want.Severity || back.RawSHA256 != want.RawSHA256 ||
+		back.Host != want.Host || back.Message != want.Message {
 		t.Errorf("round trip lost fields: got %+v, want %+v", back, want)
+	}
+	// attrs is the only map-typed field, so it is the one most likely to be
+	// dropped by a future encoding change
+	if len(back.Attrs) != len(want.Attrs) {
+		t.Fatalf("attrs = %v, want %v", back.Attrs, want.Attrs)
+	}
+	for k, v := range want.Attrs {
+		if back.Attrs[k] != v {
+			t.Errorf("attrs[%q] = %q, want %q", k, back.Attrs[k], v)
+		}
 	}
 }
 
