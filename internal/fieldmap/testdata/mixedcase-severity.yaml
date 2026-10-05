@@ -1,0 +1,8 @@
+schema: urn:edg3:assim:canon:v1:7f3c9ab2
+format: example
+ts_layout: rfc3339
+fields:
+  ts: timestamp
+severity:
+  Warning: 4
+  CRITICAL: 2

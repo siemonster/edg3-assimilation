@@ -40,6 +40,15 @@ func Load(path string) (Map, error) {
 	if m.TSLayout == "" {
 		m.TSLayout = "rfc3339"
 	}
+	// severity() lowercases the value it looks up, so fold the keys to match
+	// once here rather than leaving a map that can never be hit.
+	if len(m.Severity) > 0 {
+		folded := make(map[string]int, len(m.Severity))
+		for key, level := range m.Severity {
+			folded[strings.ToLower(key)] = level
+		}
+		m.Severity = folded
+	}
 	return m, nil
 }
 

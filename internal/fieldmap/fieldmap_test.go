@@ -151,3 +151,17 @@ func TestApplyStaticSeverityAndMessageLandOnTheEventNotAttrs(t *testing.T) {
 		t.Errorf("static message must not also land in attrs: %v", e.Attrs)
 	}
 }
+
+func TestLoadNormalisesSeverityKeyCase(t *testing.T) {
+	// severity() lowercases the value it looks up, so a map written with
+	// capitalised keys would never match anything.
+	m, err := Load(filepath.Join("testdata", "mixedcase-severity.yaml"))
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	for value, want := range map[string]int{"warning": 4, "WARNING": 4, "critical": 2} {
+		if got := m.severity(value); got != want {
+			t.Errorf("severity(%q) = %d, want %d", value, got, want)
+		}
+	}
+}
