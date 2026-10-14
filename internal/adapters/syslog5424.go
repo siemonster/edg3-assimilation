@@ -26,8 +26,9 @@ func (syslog5424) Parse(line []byte) (Record, error) {
 	if m == nil {
 		return nil, errors.New("line is not RFC 5424 syslog")
 	}
-	priority, err := strconv.Atoi(m[1])
-	if err != nil || priority > 191 {
+	// the pattern already guaranteed one to three digits, so this cannot fail
+	priority, _ := strconv.Atoi(m[1])
+	if priority > 191 {
 		return nil, fmt.Errorf("priority %q is out of range", m[1])
 	}
 	rec := Record{"severity": strconv.Itoa(priority % 8), "facility": strconv.Itoa(priority / 8)}
